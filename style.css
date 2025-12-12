@@ -8,6 +8,10 @@
     monospace;
 }
 
+html {
+  font-size: 85%;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
