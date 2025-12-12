@@ -10,14 +10,23 @@ function loadState() {
             const parsed = JSON.parse(saved);
             Object.assign(state, parsed);
             
-            if (state.sem) {
-                if (state.electiveGroup || (SEMESTER_DATA[state.sem] && !SEMESTER_DATA[state.sem].electives)) {
-                    renderStep3();
-                } else {
-                    renderStep2();
-                }
+            if (state.scheme && state.branch && state.sem) {
+                 // Check if we have marks data or need to go to elective selection
+                 // Logic to determine which step to render based on state
+                 if (isElectiveSelectionComplete()) {
+                     renderStep3();
+                 } else if (state.electiveSelections || state.track) {
+                     // Incomplete selections, maybe send to step 2 (Electives)
+                      renderStep2();
+                 } else {
+                     renderStep2(); // Elective step
+                 }
+            } else if (state.scheme && state.branch) {
+                renderStep1(); // Sem selection
+            } else if (state.scheme) {
+                renderBranchSelection();
             } else {
-                return false;
+                renderSchemeSelection();
             }
             return true;
         } catch (e) {
@@ -27,22 +36,96 @@ function loadState() {
     return false;
 }
 
+function init() {
+     if (!loadState()) {
+        renderSchemeSelection();
+    }
+}
+
 function restart() {
+    state.scheme = null;
+    state.branch = null;
     state.sem = null;
-    state.electiveGroup = null;
+    state.electiveSelections = {};
+    state.track = null;
     state.marks = {};
     localStorage.removeItem('gradeCalcState');
-    renderStep1();
+    renderSchemeSelection();
+}
+
+function renderSchemeSelection() {
+    mainContent.innerHTML = `
+        <div class="step">
+            <p class="instruction">Select Course Scheme</p>
+            <button onclick="selectScheme('RC2024-25')" class="primary-btn">
+                <span>RC 2024-25 (NEP)</span> <span>&rarr;</span>
+            </button>
+            <button onclick="selectScheme('RC2019-20')" class="primary-btn">
+                <span>RC 2019-20 </span> <span>&rarr;</span>
+            </button>
+        </div>
+    `;
+}
+
+function selectScheme(scheme) {
+    state.scheme = scheme;
+    saveState();
+    renderBranchSelection();
+}
+
+function renderBranchSelection() {
+    let html = `<div class="step"><p class="instruction">Select Branch</p><div class="sem-grid">`;
+    for (const [code, name] of Object.entries(BRANCHES)) {
+        // Disable branches that don't have data yet
+        const isDisabled = !DATA[state.scheme][code]; 
+        html += `
+            <button onclick="selectBranch('${code}')" class="${isDisabled ? 'disabled-soon' : ''}">
+                <span>${name} (${code})</span>
+                ${isDisabled ? '<small>Coming Soon</small>' : '<span>&rarr;</span>'}
+            </button>
+        `;
+    }
+    html += `</div><button class="secondary" onclick="restart()">Back</button></div>`;
+    mainContent.innerHTML = html;
+}
+
+function selectBranch(branch) {
+    if (!DATA[state.scheme][branch]) {
+        showToast("Data for this branch is coming soon!");
+        return;
+    }
+    state.branch = branch;
+    saveState();
+    renderStep1(); // Select Semester
 }
 
 function renderStep1() {
+    // Select Semester
+    let availableSems = [];
+    
+    // Logic for RC2019-20 Common Semesters
+    if (state.scheme === 'RC2019-20') {
+        if (DATA[state.scheme]['COMMON']) {
+            availableSems = [...availableSems, ...Object.keys(DATA[state.scheme]['COMMON'])];
+        }
+    }
+    
+    // Branch specific semesters
+    if (DATA[state.scheme][state.branch]) {
+        availableSems = [...availableSems, ...Object.keys(DATA[state.scheme][state.branch])];
+    }
+    
+    // Remove duplicates and sort
+    availableSems = [...new Set(availableSems)].sort();
+
     let buttonsHtml = '';
+    
     for(let i=1; i<=8; i++) {
-        const isComingSoon = i > 4;
+        const isAvailable = availableSems.includes(i.toString());
         buttonsHtml += `
-            <button onclick="selectSemester(${i})" class="${isComingSoon ? 'disabled-soon' : ''}">
+            <button onclick="selectSemester(${i})" class="${!isAvailable ? 'disabled-soon' : ''}">
                 <span>Semester ${i}</span>
-                <span>${isComingSoon ? '<small style="font-size:0.7em; opacity:0.6;">SOON</small>' : '&rarr;'}</span>
+                <span>${!isAvailable ? '<small>N/A</small>' : '&rarr;'}</span>
             </button>
         `;
     }
@@ -53,57 +136,167 @@ function renderStep1() {
             <div class="sem-grid">
                 ${buttonsHtml}
             </div>
+            <button class="secondary" onclick="renderBranchSelection()">Back</button>
         </div>
     `;
 }
 
 function selectSemester(sem) {
-    if (sem > 4) {
-        showToast(`Semester ${sem} is coming soon!`);
+    let semData = null;
+
+    // Check Common first (Priority to Common for RC19-20 Sem 1/2)
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][sem]) {
+        semData = DATA[state.scheme]['COMMON'][sem];
+    } else if (DATA[state.scheme][state.branch][sem]) {
+        semData = DATA[state.scheme][state.branch][sem];
+    }
+
+    if (!semData) {
+        showToast("Semester data not available");
         return;
     }
     state.sem = sem;
+    state.electiveSelections = {};
+    state.track = null;
     saveState();
     renderStep2();
 }
 
 function renderStep2() {
-    const semData = SEMESTER_DATA[state.sem];
+    // Select Elective(s)
+    let semData;
+    // Resolve Correct Data Source again
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+    
+    // Check mode
     if (!semData.electives || Object.keys(semData.electives).length === 0) {
-        state.electiveGroup = null;
-        saveState();
+        // No electives, skip to marks
         renderStep3();
         return;
     }
 
-    const groupNames = Object.keys(semData.electives);
-    let html = `<div class="step"><p class="instruction">Select Elective</p>`;
+    if (semData.electiveMode === 'track') {
+        renderTrackSelection(semData);
+    } else if (semData.electiveMode === 'slot') {
+        renderSlotSelection(semData);
+    }
+}
+
+function renderTrackSelection(semData) {
+    const tracks = Object.keys(semData.electives);
+    let html = `<div class="step"><p class="instruction">Select Elective Track</p>`;
     
-    groupNames.forEach(group => {
+    tracks.forEach(track => {
         html += `
-            <button onclick="selectElective('${group}')">
-                <span>${group}</span>
+            <button onclick="selectTrack('${track}')">
+                <span>${track}</span>
                 <span>&rarr;</span>
             </button>
         `;
     });
-
-    html += `<button class="secondary" onclick="renderStep1()">Go Back</button></div>`;
+    html += `<button class="secondary" onclick="renderStep1()">Back</button></div>`;
     mainContent.innerHTML = html;
 }
 
-function selectElective(group) {
-    state.electiveGroup = group;
+function selectTrack(track) {
+    state.track = track;
     saveState();
     renderStep3();
 }
 
+function renderSlotSelection(semData) {
+    // Render dropdowns for each slot
+    const slots = Object.keys(semData.electives);
+    let html = `<div class="step"><p class="instruction">Select Electives</p>`;
+    
+    slots.forEach(slot => {
+        const options = semData.electives[slot];
+        const currentVal = state.electiveSelections[slot] || "";
+        
+        html += `
+            <div style="margin-bottom: 1.5rem;">
+                <label class="item-label">${slot}</label>
+                <select onchange="updateSlotSelection('${slot}', this.value)">
+                    <option value="" disabled ${currentVal===""?'selected':''}>Select Subject...</option>
+                    ${options.map(opt => `<option value="${opt.code}" ${currentVal===opt.code?'selected':''}>${opt.code} - ${opt.name}</option>`).join('')}
+                </select>
+            </div>
+        `;
+    });
+    
+    html += `
+        <button class="primary" onclick="confirmSlotSelections()">Next &rarr;</button>
+        <button class="secondary" onclick="renderStep1()">Back</button>
+    </div>`;
+    mainContent.innerHTML = html;
+}
+
+function updateSlotSelection(slot, code) {
+    state.electiveSelections[slot] = code;
+    saveState();
+}
+
+function confirmSlotSelections() {
+    let semData;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+    const slots = Object.keys(semData.electives);
+    
+    // Validate all slots filled
+    for (const slot of slots) {
+        if (!state.electiveSelections[slot]) {
+            showToast(`Please select a subject for ${slot}`);
+            return;
+        }
+    }
+    renderStep3();
+}
+
+function isElectiveSelectionComplete() {
+    if (!state.sem) return false;
+    let semData;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+    
+    if (!semData.electives || Object.keys(semData.electives).length === 0) return true;
+    
+    if (semData.electiveMode === 'track') return !!state.track;
+    if (semData.electiveMode === 'slot') {
+        const slots = Object.keys(semData.electives);
+        return slots.every(s => !!state.electiveSelections[s]);
+    }
+    return false;
+}
+
 function renderStep3() {
-    const semData = SEMESTER_DATA[state.sem];
+    let semData;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+
     let subjects = [...semData.common];
     
-    if (state.electiveGroup && semData.electives[state.electiveGroup]) {
-        subjects = [...subjects, ...semData.electives[state.electiveGroup]];
+    if (semData.electiveMode === 'track' && state.track) {
+        subjects = [...subjects, ...semData.electives[state.track]];
+    } else if (semData.electiveMode === 'slot') {
+        // Lookup selected codes
+        Object.keys(semData.electives).forEach(slot => {
+            const code = state.electiveSelections[slot];
+            const sub = semData.electives[slot].find(s => s.code === code);
+            if (sub) subjects.push(sub);
+        });
     }
     
     let html = `
@@ -113,7 +306,12 @@ function renderStep3() {
     `;
     
     subjects.forEach((sub) => {
-        const maxMarks = sub.credits * 25;
+        // Use explicit max marks if defined (RC19-20), otherwise calculate (RC24-25)
+        const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
+        
+        // Skip subjects with 0 credits/marks (Audits)
+        if (sub.credits === 0 || maxMarks === 0) return;
+
         const val = state.marks[sub.code] !== undefined ? state.marks[sub.code] : '';
         
         html += `
@@ -122,14 +320,15 @@ function renderStep3() {
                 <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">${sub.name}</p>
                 <div class="flex-row">
                     <div style="flex:1; position: relative;">
-                        <input type="number" 
+                       <input type="number" 
                                id="input-${sub.code}"
+                               class="mark-input"
+                               data-code="${sub.code}"
+                               data-max="${maxMarks}"
                                placeholder="Obtained Marks" 
                                min="0" max="${maxMarks}"
                                step="0.5"
                                inputmode="decimal"
-                               onchange="updateMarks('${sub.code}', this.value)" 
-                               onblur="validateInput('${sub.code}', ${maxMarks})"
                                value="${val}" />
                         <span style="position: absolute; right: 10px; top: 12px; color: #666; font-size: 0.8rem;">
                             / ${maxMarks}
@@ -160,10 +359,23 @@ function renderResult(sgpa) {
     else if(sgpa > 8) message = "Excellent Work!";
     else if(sgpa < 5) message = "You can do better!";
 
-    const semData = SEMESTER_DATA[state.sem];
+    let semData;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+    
     let subjects = [...semData.common];
-    if (state.electiveGroup && semData.electives[state.electiveGroup]) {
-        subjects = [...subjects, ...semData.electives[state.electiveGroup]];
+    
+    if (semData.electiveMode === 'track' && state.track) {
+        subjects = [...subjects, ...semData.electives[state.track]];
+    } else if (semData.electiveMode === 'slot') {
+         Object.keys(semData.electives).forEach(slot => {
+            const code = state.electiveSelections[slot];
+            const sub = semData.electives[slot].find(s => s.code === code);
+            if (sub) subjects.push(sub);
+        });
     }
 
     let breakdownHtml = `<div style="margin: 1.5rem 0; text-align: left; border-top: 1px solid #333; border-bottom: 1px solid #333;">`;
@@ -175,8 +387,10 @@ function renderResult(sgpa) {
     </div>`;
 
     subjects.forEach(sub => {
+        if (sub.credits === 0) return; // Skip audit courses in calculation/display
+        
         const marks = state.marks[sub.code];
-        const maxMarks = sub.credits * 25;
+        const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
         const percentage = (marks / maxMarks) * 100;
         const letter = getGradeLetter(percentage);
         
@@ -195,6 +409,7 @@ function renderResult(sgpa) {
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 0.5rem;">
                     <div style="text-align:left;">
                         <span style="display:block; font-size: 0.8rem; color: #666; text-transform: uppercase;">Semester ${state.sem}</span>
+                        <span style="display:block; font-size: 0.6rem; color: #444;">${state.branch} - ${state.scheme}</span>
                     </div>
                     <div style="text-align:right;">
                         <span style="font-size: 3rem; font-weight: 700; color: #fff; line-height: 1;">${sgpa.toFixed(2)}</span>
@@ -223,12 +438,23 @@ function shareScorecard() {
     const element = document.getElementById('score-card');
     showToast("Generating image...");
     
+    if (window.html2canvas) {
+        generateImage(element);
+    } else {
+        const script = document.createElement('script');
+        script.src = "https://html2canvas.hertzen.com/dist/html2canvas.min.js";
+        script.onload = () => generateImage(element);
+        document.head.appendChild(script);
+    }
+}
+
+function generateImage(element) {
     html2canvas(element, {
         backgroundColor: "#000000",
         scale: 2
     }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `SGPA_Sem${state.sem}_${new Date().toISOString().slice(0,10)}.png`;
+        link.download = `SGPA_${state.branch}_Sem${state.sem}.png`;
         link.href = canvas.toDataURL();
         link.click();
         showToast("Image downloaded!");
