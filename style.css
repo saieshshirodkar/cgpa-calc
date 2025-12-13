@@ -75,6 +75,13 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  overflow: hidden;
+}
+
+button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (hover: hover) {
@@ -121,8 +128,7 @@ button.secondary {
     }
 }
 
-input,
-select {
+input {
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-color);
@@ -137,8 +143,7 @@ select {
   user-select: text;
 }
 
-input:focus,
-select:focus {
+input:focus {
   border-color: var(--highlight-color);
 }
 
@@ -220,6 +225,7 @@ input[type=number] {
     opacity: 0.5;
     cursor: not-allowed;
     border-style: dashed;
+    pointer-events: none;
 }
 .disabled-soon:active {
     background-color: transparent;
@@ -276,9 +282,14 @@ input[type=number] {
         min-height: 60px; 
     }
 
-    input, select {
+    input {
         font-size: 16px; 
         padding: 1rem;
+        height: 50px;
+    }
+    
+    select {
+        font-size: 16px;
         height: 50px;
     }
 
@@ -371,4 +382,15 @@ option {
     background-color: #000;
     color: #fff;
     padding: 10px;
+}
+
+.rainbow-text {
+    font-size: 0.8rem;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rainbow-text:hover {
+    color: #fff;
 }

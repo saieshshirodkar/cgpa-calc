@@ -1,5 +1,10 @@
 function updateMarks(code, value) {
-    state.marks[code] = parseFloat(value);
+    const parsed = parseFloat(value);
+    if (value === '' || isNaN(parsed)) {
+        delete state.marks[code];
+    } else {
+        state.marks[code] = parsed;
+    }
     saveState();
 }
 
@@ -28,10 +33,15 @@ function validateInput(code, maxMarksStr) {
 
 function calculateSGPA() {
     let semData;
-    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON']?.[state.sem]) {
         semData = DATA[state.scheme]['COMMON'][state.sem];
     } else {
-        semData = DATA[state.scheme][state.branch][state.sem];
+        semData = DATA[state.scheme]?.[state.branch]?.[state.sem];
+    }
+    
+    if (!semData) {
+        showToast("Semester data not found");
+        return;
     }
 
     let subjects = [...semData.common];

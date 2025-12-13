@@ -36,11 +36,15 @@ function loadState() {
     return false;
 }
 
-function init() {
-     if (!loadState()) {
-        renderSchemeSelection();
+function getSemData() {
+    if (!state.scheme || !state.sem) return null;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON']?.[state.sem]) {
+        return DATA[state.scheme]['COMMON'][state.sem];
     }
+    return DATA[state.scheme]?.[state.branch]?.[state.sem] || null;
 }
+
+
 
 function restart() {
     state.scheme = null;
@@ -79,7 +83,7 @@ function renderBranchSelection() {
         // Disable branches that don't have data yet
         const isDisabled = !DATA[state.scheme][code]; 
         html += `
-            <button onclick="selectBranch('${code}')" class="${isDisabled ? 'disabled-soon' : ''}">
+            <button onclick="selectBranch('${code}')" class="${isDisabled ? 'disabled-soon' : ''}" ${isDisabled ? 'disabled' : ''}>
                 <span>${name} (${code})</span>
                 ${isDisabled ? '<small>Coming Soon</small>' : '<span>&rarr;</span>'}
             </button>
@@ -123,7 +127,7 @@ function renderStep1() {
     for(let i=1; i<=8; i++) {
         const isAvailable = availableSems.includes(i.toString());
         buttonsHtml += `
-            <button onclick="selectSemester(${i})" class="${!isAvailable ? 'disabled-soon' : ''}">
+            <button onclick="selectSemester(${i})" class="${!isAvailable ? 'disabled-soon' : ''}" ${!isAvailable ? 'disabled' : ''}>
                 <span>Semester ${i}</span>
                 <span>${!isAvailable ? '<small>N/A</small>' : '&rarr;'}</span>
             </button>
@@ -145,7 +149,7 @@ function selectSemester(sem) {
     let semData = null;
 
     // Check Common first (Priority to Common for RC19-20 Sem 1/2)
-    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][sem]) {
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON']?.[sem]) {
         semData = DATA[state.scheme]['COMMON'][sem];
     } else if (DATA[state.scheme][state.branch][sem]) {
         semData = DATA[state.scheme][state.branch][sem];
@@ -259,6 +263,25 @@ function confirmSlotSelections() {
     renderStep3();
 }
 
+function goBackFromStep3() {
+    let semData;
+    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON'][state.sem]) {
+        semData = DATA[state.scheme]['COMMON'][state.sem];
+    } else {
+        semData = DATA[state.scheme][state.branch][state.sem];
+    }
+    
+    if (semData.electives && Object.keys(semData.electives).length > 0) {
+        if (semData.electiveMode === 'track') {
+            renderTrackSelection(semData);
+        } else if (semData.electiveMode === 'slot') {
+            renderSlotSelection(semData);
+        }
+    } else {
+        renderStep1();
+    }
+}
+
 function isElectiveSelectionComplete() {
     if (!state.sem) return false;
     let semData;
@@ -301,7 +324,10 @@ function renderStep3() {
     
     let html = `
         <div class="step" id="marks-step">
-            <p class="instruction">Enter Marks Obtained</p>
+            <p class="instruction" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Enter Marks Obtained</span>
+                <span class="rainbow-text" onclick="fillRandomMarks()">Random</span>
+            </p>
             <div id="items-list">
     `;
     
@@ -342,7 +368,7 @@ function renderStep3() {
     html += `
             </div>
             <button class="primary" onclick="calculateSGPA()">Calculate SGPA</button>
-            <button class="secondary" onclick="renderStep2()">Back</button>
+            <button class="secondary" onclick="goBackFromStep3()">Back</button>
         </div>`;
     
     mainContent.innerHTML = html;
@@ -351,6 +377,19 @@ function renderStep3() {
         const firstInput = document.querySelector('input[type=number]');
         if(firstInput && (!state.marks || Object.keys(state.marks).length === 0)) firstInput.focus();
     }, 200);
+}
+
+function fillRandomMarks() {
+    const inputs = document.querySelectorAll('.mark-input');
+    inputs.forEach(input => {
+        const max = parseFloat(input.dataset.max);
+        const min = Math.floor(max * 0.4);
+        const randomVal = Math.floor(Math.random() * (max - min + 1)) + min;
+        input.value = randomVal;
+        state.marks[input.dataset.code] = randomVal;
+    });
+    saveState();
+    showToast("Random marks filled!");
 }
 
 function renderResult(sgpa) {

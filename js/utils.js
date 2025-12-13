@@ -19,7 +19,10 @@ function showToast(msg) {
 function shakeInput(el) {
     el.style.borderColor = '#ff4444';
     el.classList.add('shake');
-    setTimeout(() => el.style.borderColor = '', 1000);
+    setTimeout(() => {
+        el.style.borderColor = '';
+        el.classList.remove('shake');
+    }, 500);
 }
 
 function getGradePoint(percentage) {
