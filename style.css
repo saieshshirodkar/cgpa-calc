@@ -269,17 +269,28 @@ input[type=number] {
 
 @media (max-width: 600px) {
     body {
-        padding: 30px 16px;
+        padding: 20px 16px;
     }
     
     .container {
-        gap: 2rem;
+        gap: 1.5rem;
+        max-width: 100%;
+    }
+
+    .app-header h1 {
+        font-size: 1.25rem;
     }
 
     button {
         padding: 1.25rem 1rem;
         margin-bottom: 0.85rem;
         min-height: 60px; 
+        font-size: 1rem;
+    }
+    
+    button span {
+        overflow: visible;
+        white-space: normal;
     }
 
     input {
@@ -291,6 +302,7 @@ input[type=number] {
     select {
         font-size: 16px;
         height: 50px;
+        padding: 0.8rem 2.5rem 0.8rem 1rem;
     }
 
     .sem-grid {
@@ -303,15 +315,29 @@ input[type=number] {
         justify-content: center;
         gap: 0.5rem;
         text-align: center;
+        min-height: 80px;
+    }
+    
+    .sem-grid button span {
+        white-space: normal;
     }
     
     .sem-grid button span:last-child {
         font-size: 1.2rem;
     }
 
+    .instruction {
+        font-size: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
     .item-row {
         padding-bottom: 1.25rem;
         margin-bottom: 1.25rem;
+    }
+    
+    .item-label {
+        font-size: 0.7rem;
     }
     
     .flex-row div { 
@@ -327,10 +353,36 @@ input[type=number] {
     .subtitle {
         font-size: 0.7rem;
     }
+    
     h2 {
-        font-size: 3.5rem !important; 
+        font-size: 3rem !important; 
+    }
+    
+    #score-card {
+        padding: 1.5rem !important;
+    }
+    
+    #score-card [style*="font-size: 3rem"] {
+        font-size: 2.5rem !important;
+    }
+    
+    #toast-box {
+        bottom: 80px;
+        left: 16px;
+        right: 16px;
+        transform: none;
+    }
+    
+    .toast {
+        white-space: normal;
+        text-align: center;
+    }
+    
+    .rainbow-text {
+        font-size: 0.9rem;
     }
 }
+
 
 /* Dark Dropdown Styles */
 select {
@@ -358,8 +410,8 @@ select:focus {
 
 /* For Firefox, remove arrow */
 select {
-    -moz-appearance: none;
-    -webkit-appearance: none;
+    appearance: none;
+    appearance: none;
 }
 
 /* Custom Dropdown Container */
