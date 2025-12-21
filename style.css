@@ -1,3 +1,13 @@
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
 :root {
   --bg-color: #000000;
   --text-color: #ffffff;
@@ -18,6 +28,7 @@ html {
   padding: 0;
   -webkit-user-select: none;
   user-select: none;
+  outline: none; /* Globally remove default focus outlines */
 }
 
 body {
@@ -60,9 +71,55 @@ body {
 }
 
 button {
+  position: relative;
   background: transparent;
-  color: var(--text-color);
   border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: visible;
+}
+
+button::before, button::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 1.5px solid transparent;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+button::before {
+  top: 0;
+  left: 0;
+}
+
+button::after {
+  bottom: 0;
+  right: 0;
+}
+
+@media (hover: hover) {
+    button:hover::before {
+        width: 100%;
+        height: 100%;
+        border-top-color: var(--highlight-color);
+        border-right-color: var(--highlight-color);
+        transition: width 0.15s linear, height 0.15s linear 0.15s;
+    }
+
+    button:hover::after {
+        width: 100%;
+        height: 100%;
+        border-bottom-color: var(--highlight-color);
+        border-left-color: var(--highlight-color);
+        transition: width 0.15s linear 0.3s, height 0.15s linear 0.45s;
+    }
+}
+
+button {
+  color: var(--text-color);
   padding: 1rem 1.25rem;
   font-family: inherit;
   font-size: 0.9rem;
@@ -71,11 +128,10 @@ button {
   width: 100%;
   text-align: left;
   margin-bottom: 0.75rem;
-  border-radius: 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  overflow: hidden;
+  border: 1px solid var(--border-color); /* Overwriting base */
 }
 
 button span {
@@ -85,10 +141,9 @@ button span {
 }
 
 @media (hover: hover) {
-    button:hover {
-        border-color: var(--highlight-color);
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+  button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 }
 
 button:active {
@@ -99,16 +154,15 @@ button:active {
 button.primary {
   text-align: center;
   justify-content: center;
-  border-color: var(--highlight-color);
   font-weight: 600;
   margin-top: 1rem;
 }
 
 @media (hover: hover) {
-    button.primary:hover {
-        background: var(--highlight-color);
-        color: var(--bg-color);
-    }
+  button.primary:hover {
+    background: var(--highlight-color);
+    color: var(--bg-color);
+  }
 }
 
 button.secondary {
@@ -121,11 +175,11 @@ button.secondary {
 }
 
 @media (hover: hover) {
-    button.secondary:hover {
-        color: #fff;
-        background: transparent;
-        border: none;
-    }
+  button.secondary:hover {
+    color: #fff;
+    background: transparent;
+    border: none;
+  }
 }
 
 input {
@@ -137,13 +191,13 @@ input {
   padding: 0.8rem;
   width: 100%;
   border-radius: 4px;
-  transition: border-color 0.2s;
   outline: none;
+  transition: border-color 0.2s;
   -webkit-user-select: text;
   user-select: text;
 }
 
-input:focus {
+input:focus, .fancy-input:hover input {
   border-color: var(--highlight-color);
 }
 
@@ -210,179 +264,191 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
 .sem-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .disabled-soon {
-    opacity: 0.5;
-    cursor: not-allowed;
-    border-style: dashed;
-    pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+  pointer-events: none;
 }
 .disabled-soon:active {
-    background-color: transparent;
-    color: var(--text-color);
+  background-color: transparent;
+  color: var(--text-color);
 }
 
 #toast-box {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 1000;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
 }
 
 .toast {
-    background: #333;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s ease;
-    border: 1px solid #444;
-    white-space: nowrap;
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  border: 1px solid #444;
+  white-space: nowrap;
 }
 
 .shake {
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
 @media (max-width: 600px) {
-    body {
-        padding: 20px 16px;
-    }
-    
-    .container {
-        gap: 1.5rem;
-        max-width: 100%;
-    }
+  body {
+    padding: 20px 16px;
+  }
 
-    .app-header h1 {
-        font-size: 1.25rem;
-    }
+  .container {
+    gap: 1.5rem;
+    max-width: 100%;
+  }
 
-    button {
-        padding: 1.25rem 1rem;
-        margin-bottom: 0.85rem;
-        min-height: 60px; 
-        font-size: 1rem;
-    }
-    
-    button span {
-        overflow: visible;
-        white-space: normal;
-    }
+  .app-header h1 {
+    font-size: 1.25rem;
+  }
 
-    input {
-        font-size: 16px; 
-        padding: 1rem;
-        height: 50px;
-    }
-    
-    select {
-        font-size: 16px;
-        height: 50px;
-        padding: 0.8rem 2.5rem 0.8rem 1rem;
-    }
+  button {
+    padding: 1.25rem 1rem;
+    margin-bottom: 0.85rem;
+    min-height: 60px;
+    font-size: 1rem;
+  }
 
-    .sem-grid {
-        gap: 0.75rem;
-    }
+  button span {
+    overflow: visible;
+    white-space: normal;
+  }
 
-    .sem-grid button {
-        padding: 1rem;
-        flex-direction: column;
-        justify-content: center;
-        gap: 0.5rem;
-        text-align: center;
-        min-height: 80px;
-    }
-    
-    .sem-grid button span {
-        white-space: normal;
-    }
-    
-    .sem-grid button span:last-child {
-        font-size: 1.2rem;
-    }
+  input {
+    font-size: 16px;
+    padding: 1rem;
+    height: 50px;
+  }
 
-    .instruction {
-        font-size: 1rem;
-        margin-bottom: 1.25rem;
-    }
+  select {
+    font-size: 16px;
+    height: 50px;
+    padding: 0.8rem 2.5rem 0.8rem 1rem;
+  }
 
-    .item-row {
-        padding-bottom: 1.25rem;
-        margin-bottom: 1.25rem;
-    }
-    
-    .item-label {
-        font-size: 0.7rem;
-    }
-    
-    .flex-row div { 
-        position: relative; 
-    }
-    
-    .flex-row span[style*="absolute"] {
-        top: 15px !important;
-        right: 12px !important;
-        font-size: 0.75rem !important;
-    }
-    
-    .subtitle {
-        font-size: 0.7rem;
-    }
-    
-    h2 {
-        font-size: 3rem !important; 
-    }
-    
-    #score-card {
-        padding: 1.5rem !important;
-    }
-    
-    #score-card [style*="font-size: 3rem"] {
-        font-size: 2.5rem !important;
-    }
-    
-    #toast-box {
-        bottom: 80px;
-        left: 16px;
-        right: 16px;
-        transform: none;
-    }
-    
-    .toast {
-        white-space: normal;
-        text-align: center;
-    }
-    
-    .rainbow-text {
-        font-size: 0.9rem;
-    }
+  .sem-grid {
+    gap: 0.75rem;
+  }
+
+  .sem-grid button {
+    padding: 1rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    min-height: 80px;
+  }
+
+  .sem-grid button span {
+    white-space: normal;
+  }
+
+  .sem-grid button span:last-child {
+    font-size: 1.2rem;
+  }
+
+  .instruction {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .item-row {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .item-label {
+    font-size: 0.7rem;
+  }
+
+  .flex-row div {
+    position: relative;
+  }
+
+  .flex-row span[style*="absolute"] {
+    top: 15px !important;
+    right: 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+  }
+
+  h2 {
+    font-size: 3rem !important;
+  }
+
+  #score-card {
+    padding: 1.5rem !important;
+  }
+
+  #score-card [style*="font-size: 3rem"] {
+    font-size: 2.5rem !important;
+  }
+
+  #toast-box {
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+
+  .toast {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .rainbow-text {
+    font-size: 0.9rem;
+  }
 }
-
 
 /* Dark Dropdown Styles */
 select {
@@ -410,39 +476,38 @@ select:focus {
 
 /* For Firefox, remove arrow */
 select {
-    appearance: none;
-    appearance: none;
+  appearance: none;
 }
 
 /* Custom Dropdown Container */
 .dropdown-container {
-    margin-bottom: 1.5rem;
-    position: relative;
-    text-align: left;
+  margin-bottom: 1.5rem;
+  position: relative;
+  text-align: left;
 }
 
 .dropdown-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #888;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #888;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
 }
 
 /* Option styling (partial support in some browsers) */
 option {
-    background-color: #000;
-    color: #fff;
-    padding: 10px;
+  background-color: #000;
+  color: #fff;
+  padding: 10px;
 }
 
 .rainbow-text {
-    font-size: 0.8rem;
-    color: #666;
-    cursor: pointer;
-    transition: color 0.2s;
+  font-size: 0.8rem;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
 .rainbow-text:hover {
-    color: #fff;
+  color: #fff;
 }

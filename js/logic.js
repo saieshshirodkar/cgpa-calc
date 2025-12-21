@@ -98,3 +98,104 @@ function calculateSGPA() {
     const sgpa = totalPoints / totalCredits;
     renderResult(sgpa);
 }
+
+function solveForTarget() {
+    const targetEl = document.getElementById('target-sgpa');
+    const targetValue = targetEl.value;
+    
+    if (!targetValue || isNaN(parseFloat(targetValue))) {
+        showToast("Please enter a target SGPA");
+        return;
+    }
+
+    const target = parseFloat(targetValue);
+    if (target < 0 || target > 10) {
+        showToast("SGPA must be between 0 and 10");
+        return;
+    }
+
+    const semData = getSemData();
+    if (!semData) return;
+
+    let subjects = [...semData.common];
+    if (semData.electiveMode === 'track' && state.track) {
+        subjects = [...subjects, ...semData.electives[state.track]];
+    } else if (semData.electiveMode === 'slot') {
+        Object.keys(semData.electives).forEach(slot => {
+            const code = state.electiveSelections[slot];
+            const sub = semData.electives[slot].find(s => s.code === code);
+            if (sub) subjects.push(sub);
+        });
+    }
+
+    let totalCredits = 0;
+    let currentPoints = 0;
+    const unfilled = [];
+
+    subjects.forEach(sub => {
+        if (sub.credits === 0) return;
+        const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
+        if (maxMarks === 0) return;
+
+        totalCredits += sub.credits;
+        const val = state.marks[sub.code];
+        if (val !== undefined && val !== '' && !isNaN(parseFloat(val))) {
+            const percentage = (parseFloat(val) / maxMarks) * 100;
+            currentPoints += getGradePoint(percentage) * sub.credits;
+        } else {
+            unfilled.push(sub);
+        }
+    });
+
+    if (unfilled.length === 0) {
+        showToast("All fields are already filled");
+        return;
+    }
+
+    const remainingCredits = unfilled.reduce((acc, sub) => acc + sub.credits, 0);
+    const targetPoints = target * totalCredits;
+    const neededFromRemaining = targetPoints - currentPoints;
+
+    if (neededFromRemaining > (remainingCredits * 10)) {
+        const maxPossible = (currentPoints + (remainingCredits * 10)) / totalCredits;
+        showToast(`Impossible! Max possible SGPA is ${maxPossible.toFixed(2)}`);
+        return;
+    }
+
+    if (neededFromRemaining <= 0) {
+        unfilled.forEach(sub => {
+            state.marks[sub.code] = 0;
+            const input = document.getElementById(`input-${sub.code}`);
+            if (input) input.value = 0;
+        });
+        saveState();
+        showToast("Target already reached! Filling rest with 0.");
+        return;
+    }
+
+    // Distribute points greedily
+    let tempRemainingNeeded = neededFromRemaining;
+    let tempRemainingCredits = remainingCredits;
+    
+    unfilled.forEach((sub, i) => {
+        const avgGP = tempRemainingNeeded / tempRemainingCredits;
+        let gp = Math.ceil(avgGP);
+        if (gp > 0 && gp < 5) gp = 5; // Minimum passing grade is 5
+        if (gp > 10) gp = 10;
+        
+        const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
+        const thresholds = { 10: 90, 9: 80, 8: 70, 7: 60, 6: 50, 5: 40, 0: 0 };
+        const percentage = thresholds[gp] || 0;
+        const marks = Math.ceil((percentage / 100) * maxMarks);
+        
+        state.marks[sub.code] = marks;
+        const input = document.getElementById(`input-${sub.code}`);
+        if (input) input.value = marks;
+
+        tempRemainingNeeded -= (gp * sub.credits);
+        tempRemainingCredits -= sub.credits;
+    });
+
+    saveState();
+    showToast("Marks predicted and filled!");
+}

@@ -8,21 +8,32 @@ function loadState() {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
+            
+            // Data integrity check: Ensure saved scheme and branch actually exist in current DATA
+            if (parsed.scheme && !DATA[parsed.scheme]) {
+                localStorage.removeItem('gradeCalcState');
+                return false;
+            }
+            
+            if (parsed.scheme && parsed.branch && parsed.branch !== 'COMMON' && !DATA[parsed.scheme][parsed.branch]) {
+                parsed.branch = null;
+                parsed.sem = null;
+            }
+
             Object.assign(state, parsed);
             
             if (state.scheme && state.branch && state.sem) {
-                 // Check if we have marks data or need to go to elective selection
-                 // Logic to determine which step to render based on state
-                 if (isElectiveSelectionComplete()) {
+                 const semData = getSemData();
+                 if (!semData) {
+                     state.sem = null;
+                     renderStep1();
+                 } else if (isElectiveSelectionComplete()) {
                      renderStep3();
-                 } else if (state.electiveSelections || state.track) {
-                     // Incomplete selections, maybe send to step 2 (Electives)
-                      renderStep2();
                  } else {
-                     renderStep2(); // Elective step
+                     renderStep2();
                  }
             } else if (state.scheme && state.branch) {
-                renderStep1(); // Sem selection
+                renderStep1();
             } else if (state.scheme) {
                 renderBranchSelection();
             } else {
@@ -30,6 +41,8 @@ function loadState() {
             }
             return true;
         } catch (e) {
+            console.error("State recovery failed:", e);
+            localStorage.removeItem('gradeCalcState');
             return false;
         }
     }
@@ -345,7 +358,7 @@ function renderStep3() {
                 <span class="item-label">${sub.code}</span>
                 <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">${sub.name}</p>
                 <div class="flex-row">
-                    <div style="flex:1; position: relative;">
+                    <div class="fancy-input" style="flex:1; position: relative;">
                        <input type="number" 
                                id="input-${sub.code}"
                                class="mark-input"
@@ -356,7 +369,7 @@ function renderStep3() {
                                step="0.5"
                                inputmode="decimal"
                                value="${val}" />
-                        <span style="position: absolute; right: 10px; top: 12px; color: #666; font-size: 0.8rem;">
+                        <span style="position: absolute; right: 10px; top: 12px; color: #666; font-size: 0.8rem; z-index: 2;">
                             / ${maxMarks}
                         </span>
                     </div>
@@ -367,6 +380,18 @@ function renderStep3() {
     
     html += `
             </div>
+            
+            <div style="margin: 2rem 0; padding: 1.5rem; border: 1px solid #222; border-radius: 8px; background: #050505;">
+                <p style="font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Target SGPA Predictor</p>
+                <div class="flex-row">
+                    <div class="fancy-input" style="flex:1; position: relative;">
+                        <input type="number" id="target-sgpa" placeholder="Target SGPA" step="0.01" min="0" max="10" />
+                    </div>
+                    <button class="primary" onclick="solveForTarget()" style="margin-top: 0; width: auto; white-space: nowrap; padding-left: 1.5rem; padding-right: 1.5rem;">Predict</button>
+                </div>
+                <p style="font-size: 0.65rem; color: #444; margin-top: 0.8rem;">Fills empty fields with minimum marks required.</p>
+            </div>
+
             <button class="primary" onclick="calculateSGPA()">Calculate SGPA</button>
             <button class="secondary" onclick="goBackFromStep3()">Back</button>
         </div>`;
@@ -477,12 +502,19 @@ function shareScorecard() {
     const element = document.getElementById('score-card');
     showToast("Generating image...");
     
+    // Check if network is available if script isn't loaded
+    if (!window.html2canvas && !navigator.onLine) {
+        showToast("Internet connection required for first-time download");
+        return;
+    }
+
     if (window.html2canvas) {
         generateImage(element);
     } else {
         const script = document.createElement('script');
         script.src = "https://html2canvas.hertzen.com/dist/html2canvas.min.js";
         script.onload = () => generateImage(element);
+        script.onerror = () => showToast("Failed to load image generator. Check connection.");
         document.head.appendChild(script);
     }
 }

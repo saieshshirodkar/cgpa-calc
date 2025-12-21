@@ -1,4 +1,7 @@
 function showToast(msg) {
+    // Clear existing toasts to prevent stacking
+    toastBox.innerHTML = '';
+    
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerText = msg;
