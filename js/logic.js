@@ -12,40 +12,35 @@ function validateInput(code, maxMarksStr) {
     const val = state.marks[code];
     const maxMarks = parseFloat(maxMarksStr);
     const el = document.getElementById(`input-${code}`);
-    
-    if (val === undefined || isNaN(val)) return; 
-    
+
+    if (val === undefined || isNaN(val)) return;
+
     let error = null;
     if (val < 0) error = "Marks cannot be negative";
     else if (val > maxMarks) error = `Marks cannot exceed ${maxMarks}`;
-    
+
     if (error) {
         if(el) {
             shakeInput(el);
-            el.value = ""; // Clear invalid input
-            setTimeout(() => el.focus(), 50); // Force focus back
+            el.value = "";
+            setTimeout(() => el.focus(), 50);
         }
-        delete state.marks[code]; // Remove invalid value from state
-        saveState(); // Save the removal
-        showToast(error);
+        delete state.marks[code];
+        saveState();
+        showToast(error, 3000, 'error');
     }
 }
 
 function calculateSGPA() {
-    let semData;
-    if (state.scheme === 'RC2019-20' && DATA[state.scheme]['COMMON']?.[state.sem]) {
-        semData = DATA[state.scheme]['COMMON'][state.sem];
-    } else {
-        semData = DATA[state.scheme]?.[state.branch]?.[state.sem];
-    }
-    
+    const semData = DATA[state.branch]?.[state.sem];
+
     if (!semData) {
         showToast("Semester data not found");
         return;
     }
 
     let subjects = [...semData.common];
-    
+
     if (semData.electiveMode === 'track' && state.track) {
         subjects = [...subjects, ...semData.electives[state.track]];
     } else if (semData.electiveMode === 'slot') {
@@ -55,18 +50,18 @@ function calculateSGPA() {
             if (sub) subjects.push(sub);
         });
     }
-    
+
     let totalPoints = 0;
     let totalCredits = 0;
     let errorMsg = null;
 
     for (const sub of subjects) {
-        if (sub.credits === 0) continue; // Skip audit
+        if (sub.credits === 0) continue;
 
         const marks = state.marks[sub.code];
         const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
         const el = document.getElementById(`input-${sub.code}`);
-        
+
         if (marks === undefined || marks === '' || isNaN(marks)) {
             if(el) shakeInput(el);
             if(!errorMsg) errorMsg = "Please fill in all fields";
@@ -74,7 +69,6 @@ function calculateSGPA() {
             if(el) shakeInput(el);
             if(!errorMsg) errorMsg = "Marks cannot be negative";
         } else if (marks > maxMarks) {
-            // Re-validate max marks just in case
              if(el) shakeInput(el);
              if(!errorMsg) errorMsg = `Marks for ${sub.code} cannot exceed ${maxMarks}`;
         } else {
@@ -84,12 +78,12 @@ function calculateSGPA() {
             totalCredits += sub.credits;
         }
     }
-    
+
     if (errorMsg) {
-        showToast(errorMsg);
+        showToast(errorMsg, 3000, 'error');
         return;
     }
-    
+
     if (totalCredits === 0) {
         showToast("No credits to calculate!");
         return;
@@ -102,19 +96,19 @@ function calculateSGPA() {
 function solveForTarget() {
     const targetEl = document.getElementById('target-sgpa');
     const targetValue = targetEl.value;
-    
+
     if (!targetValue || isNaN(parseFloat(targetValue))) {
-        showToast("Please enter a target SGPA");
+        showToast("Please enter a target SGPA", 3000, 'error');
         return;
     }
 
     const target = parseFloat(targetValue);
     if (target < 0 || target > 10) {
-        showToast("SGPA must be between 0 and 10");
+        showToast("SGPA must be between 0 and 10", 3000, 'error');
         return;
     }
 
-    const semData = getSemData();
+    const semData = DATA[state.branch]?.[state.sem];
     if (!semData) return;
 
     let subjects = [...semData.common];
@@ -173,21 +167,20 @@ function solveForTarget() {
         return;
     }
 
-    // Distribute points greedily
     let tempRemainingNeeded = neededFromRemaining;
     let tempRemainingCredits = remainingCredits;
-    
+
     unfilled.forEach((sub, i) => {
         const avgGP = tempRemainingNeeded / tempRemainingCredits;
         let gp = Math.ceil(avgGP);
-        if (gp > 0 && gp < 5) gp = 5; // Minimum passing grade is 5
+        if (gp > 0 && gp < 5) gp = 5;
         if (gp > 10) gp = 10;
-        
+
         const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
         const thresholds = { 10: 90, 9: 80, 8: 70, 7: 60, 6: 50, 5: 40, 0: 0 };
         const percentage = thresholds[gp] || 0;
         const marks = Math.ceil((percentage / 100) * maxMarks);
-        
+
         state.marks[sub.code] = marks;
         const input = document.getElementById(`input-${sub.code}`);
         if (input) input.value = marks;
@@ -197,5 +190,5 @@ function solveForTarget() {
     });
 
     saveState();
-    showToast("Marks predicted and filled!");
+    showToast("Marks predicted and filled!", 3000, 'success');
 }

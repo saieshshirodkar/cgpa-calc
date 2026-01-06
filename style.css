@@ -28,7 +28,7 @@ html {
   padding: 0;
   -webkit-user-select: none;
   user-select: none;
-  outline: none; /* Globally remove default focus outlines */
+  outline: none;
 }
 
 body {
@@ -51,8 +51,14 @@ body {
 }
 
 .app-header {
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 1rem;
+  border-bottom:1px solid var(--border-color);
+  padding-bottom:1rem;
+  position: sticky;
+  top: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  padding-top: 1rem;
 }
 
 .app-header h1 {
@@ -61,6 +67,14 @@ body {
   letter-spacing: -0.05em;
   margin-bottom: 0.25rem;
   cursor: pointer;
+}
+
+.progress-indicator {
+  font-size: 0.7rem;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
 }
 
 .subtitle {
@@ -120,7 +134,7 @@ button::after {
 
 button {
   color: var(--text-color);
-  padding: 1rem 1.25rem;
+  padding:1rem 1.25rem;
   font-family: inherit;
   font-size: 0.9rem;
   cursor: pointer;
@@ -131,7 +145,9 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid var(--border-color); /* Overwriting base */
+  border:1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 
 button span {
@@ -155,7 +171,7 @@ button.primary {
   text-align: center;
   justify-content: center;
   font-weight: 600;
-  margin-top: 1rem;
+  margin-top:1rem;
 }
 
 @media (hover: hover) {
@@ -184,7 +200,7 @@ button.secondary {
 
 input {
   background: transparent;
-  border: 1px solid var(--border-color);
+  border:1px solid var(--border-color);
   color: var(--text-color);
   font-family: inherit;
   font-size: 1rem;
@@ -199,16 +215,30 @@ input {
 
 input:focus, .fancy-input:hover input {
   border-color: var(--highlight-color);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+.fancy-input span {
+  pointer-events: none;
+  user-select: none;
+}
+
+.empty-field {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.empty-field:focus {
+  border-color: #ef4444 !important;
 }
 
 .instruction {
   font-size: 1.1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom:1.5rem;
   font-weight: 500;
 }
 
 .step {
-  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.5s cubic-bezier(0.16,1,0.3,1);
 }
 
 @keyframes fadeIn {
@@ -223,9 +253,9 @@ input:focus, .fancy-input:hover input {
 }
 
 .item-row {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #1a1a1a;
+  margin-bottom:1.5rem;
+  padding-bottom:1.5rem;
+  border-bottom:1px solid #1a1a1a;
 }
 .item-row:last-of-type {
   border-bottom: none;
@@ -298,16 +328,27 @@ input[type="number"] {
 }
 
 .toast {
-  background: #333;
+  background: #222;
   color: #fff;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 12px 24px;
+  border-radius: 6px;
   font-size: 0.9rem;
   opacity: 0;
   transform: translateY(20px);
   transition: all 0.3s ease;
-  border: 1px solid #444;
+  border:1px solid #444;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.toast.success {
+  border-color: #4ade80;
+  background: linear-gradient(135deg, #1a472a 0%, #0a2818 100%);
+}
+
+.toast.error {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #4a1a1a 0%, #280a0a 100%);
 }
 
 .shake {
@@ -334,6 +375,17 @@ input[type="number"] {
   }
 }
 
+@keyframes scorePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 600px) {
   body {
     padding: 20px 16px;
@@ -349,7 +401,7 @@ input[type="number"] {
   }
 
   button {
-    padding: 1.25rem 1rem;
+    padding:1.25rem 1rem;
     margin-bottom: 0.85rem;
     min-height: 60px;
     font-size: 1rem;
@@ -399,8 +451,8 @@ input[type="number"] {
   }
 
   .item-row {
-    padding-bottom: 1.25rem;
-    margin-bottom: 1.25rem;
+    padding-bottom:1.25rem;
+    margin-bottom:1.25rem;
   }
 
   .item-label {
@@ -426,7 +478,7 @@ input[type="number"] {
   }
 
   #score-card {
-    padding: 1.5rem !important;
+    padding:1.5rem !important;
   }
 
   #score-card [style*="font-size: 3rem"] {
@@ -434,7 +486,7 @@ input[type="number"] {
   }
 
   #toast-box {
-    bottom: 80px;
+    bottom: 100px;
     left: 16px;
     right: 16px;
     transform: none;
@@ -450,12 +502,11 @@ input[type="number"] {
   }
 }
 
-/* Dark Dropdown Styles */
 select {
   appearance: none;
   background-color: #000;
   color: #fff;
-  border: 1px solid #333;
+  border:1px solid #333;
   padding: 0.8rem 1rem;
   border-radius: 8px;
   font-family: inherit;
@@ -474,12 +525,6 @@ select:focus {
   border-color: #fff;
 }
 
-/* For Firefox, remove arrow */
-select {
-  appearance: none;
-}
-
-/* Custom Dropdown Container */
 .dropdown-container {
   margin-bottom: 1.5rem;
   position: relative;
@@ -494,7 +539,6 @@ select {
   letter-spacing: 0.05em;
 }
 
-/* Option styling (partial support in some browsers) */
 option {
   background-color: #000;
   color: #fff;
@@ -506,8 +550,11 @@ option {
   color: #666;
   cursor: pointer;
   transition: color 0.2s;
+  border-bottom:1px dashed #444;
+  padding-bottom: 2px;
 }
 
 .rainbow-text:hover {
   color: #fff;
+  border-bottom-color: #fff;
 }

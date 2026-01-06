@@ -1,22 +1,19 @@
-function showToast(msg) {
-    // Clear existing toasts to prevent stacking
-    toastBox.innerHTML = '';
-    
+function showToast(msg, duration = 2000, type = 'normal') {
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast ${type}`;
     toast.innerText = msg;
     toastBox.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateY(0)';
     }, 10);
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
         setTimeout(() => toast.remove(), 300);
-    }, 2000);
+    }, duration);
 }
 
 function shakeInput(el) {
