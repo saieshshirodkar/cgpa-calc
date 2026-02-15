@@ -2,7 +2,15 @@ import { CONSTANTS } from '../config/constants.js';
 
 class StorageService {
   save(state) {
-    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        console.error('localStorage quota exceeded. Try clearing some data.');
+      } else {
+        console.error('Failed to save state:', e);
+      }
+    }
   }
 
   load() {

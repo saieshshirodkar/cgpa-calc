@@ -2,6 +2,17 @@ import { DATA } from '../../config/data.js';
 import { showToast } from '../../utils/helpers.js';
 
 export function renderSemesterSelection(container, branch, onSelect, onBack) {
+  if (!container) {
+    console.error('Container element is required for renderSemesterSelection');
+    return;
+  }
+  
+  if (!branch || !DATA[branch]) {
+    console.error('Invalid or missing branch:', branch);
+    showToast('Invalid branch selected', 3000, 'error');
+    return;
+  }
+  
   const availableSems = Object.keys(DATA[branch] || {});
 
   let buttonsHtml = '';

@@ -16,7 +16,10 @@ import { renderResults as renderResultsComponent } from './ui/components/results
 class GradeCalcApp {
   constructor() {
     this.mainContent = document.getElementById('main-content');
-    console.log('mainContent:', this.mainContent);
+    if (!this.mainContent) {
+      console.error('Fatal error: main-content element not found in DOM');
+      throw new Error('Application initialization failed: main-content element not found');
+    }
     this.init();
   }
 
@@ -38,32 +41,38 @@ class GradeCalcApp {
   }
 
   loadSavedState() {
-    const saved = storage.load();
-    if (saved) {
-      if (saved.branch && !DATA[saved.branch]) {
-        storage.clear();
-        this.renderBranchSelection();
-        return;
-      }
-
-      Object.assign(appState.get(), saved);
-
-      if (appState.get().branch && appState.get().sem) {
-        const semData = this.getSemData();
-        if (!semData) {
-          appState.set('sem', null);
-          this.renderSemesterSelection();
-        } else if (this.isElectiveSelectionComplete()) {
-          this.renderMarksInput();
-        } else {
-          this.renderElectiveSelection();
+    try {
+      const saved = storage.load();
+      if (saved) {
+        if (saved.branch && !DATA[saved.branch]) {
+          storage.clear();
+          this.renderBranchSelection();
+          return;
         }
-      } else if (appState.get().branch) {
-        this.renderSemesterSelection();
+
+        Object.assign(appState.get(), saved);
+
+        if (appState.get().branch && appState.get().sem) {
+          const semData = this.getSemData();
+          if (!semData) {
+            appState.set('sem', null);
+            this.renderSemesterSelection();
+          } else if (this.isElectiveSelectionComplete()) {
+            this.renderMarksInput();
+          } else {
+            this.renderElectiveSelection();
+          }
+        } else if (appState.get().branch) {
+          this.renderSemesterSelection();
+        } else {
+          this.renderBranchSelection();
+        }
       } else {
         this.renderBranchSelection();
       }
-    } else {
+    } catch (error) {
+      console.error('Error loading saved state:', error);
+      storage.clear();
       this.renderBranchSelection();
     }
   }
@@ -82,7 +91,10 @@ class GradeCalcApp {
       }
     });
 
-    document.querySelector('h1').addEventListener('click', () => this.restart());
+    const h1Element = document.querySelector('h1');
+    if (h1Element) {
+      h1Element.addEventListener('click', () => this.restart());
+    }
   }
 
   getSemData() {
@@ -93,8 +105,10 @@ class GradeCalcApp {
 
   isElectiveSelectionComplete() {
     const state = appState.get();
-    if (!state.sem) return false;
-    const semData = DATA[state.branch][state.sem];
+    if (!state.sem || !state.branch) return false;
+    const semData = DATA[state.branch]?.[state.sem];
+    
+    if (!semData) return false;
 
     if (!semData.electives || Object.keys(semData.electives).length === 0) return true;
 
@@ -110,16 +124,25 @@ class GradeCalcApp {
     const semData = this.getSemData();
     if (!semData) return [];
 
-    let subjects = [...semData.common];
+    let subjects = [];
+    if (Array.isArray(semData.common)) {
+      subjects = [...semData.common];
+    }
+    
     const state = appState.get();
 
-    if (semData.electiveMode === 'track' && state.track) {
-      subjects = [...subjects, ...semData.electives[state.track]];
-    } else if (semData.electiveMode === 'slot') {
+    if (semData.electiveMode === 'track' && state.track && semData.electives?.[state.track]) {
+      const electiveSubjects = semData.electives[state.track];
+      if (Array.isArray(electiveSubjects)) {
+        subjects = [...subjects, ...electiveSubjects];
+      }
+    } else if (semData.electiveMode === 'slot' && semData.electives) {
       Object.keys(semData.electives).forEach(slot => {
-        const code = state.electiveSelections[slot];
-        const sub = semData.electives[slot].find(s => s.code === code);
-        if (sub) subjects.push(sub);
+        const code = state.electiveSelections?.[slot];
+        if (code && Array.isArray(semData.electives[slot])) {
+          const sub = semData.electives[slot].find(s => s?.code === code);
+          if (sub) subjects.push(sub);
+        }
       });
     }
 
@@ -159,6 +182,13 @@ class GradeCalcApp {
 
   renderElectiveSelection() {
     const semData = this.getSemData();
+    
+    if (!semData) {
+      console.error('No semester data available');
+      showToast('Error: Semester data not available', 3000, 'error');
+      this.renderSemesterSelection();
+      return;
+    }
     
     if (!semData.electives || Object.keys(semData.electives).length === 0) {
       this.renderMarksInput();
@@ -209,36 +239,68 @@ class GradeCalcApp {
       () => this.resetAllMarks()
     );
 
-    document.querySelector('.predict-btn').addEventListener('click', () => this.solveForTarget());
+    const predictBtn = document.querySelector('.predict-btn');
+    if (predictBtn) {
+      predictBtn.addEventListener('click', () => this.solveForTarget());
+    }
   }
 
   calculateSGPA() {
-    const subjects = this.getSubjects();
-    const result = calculator.calculateSGPA(subjects, appState.get().marks);
-
-    if (result.error) {
-      if (result.error === 'incomplete') {
-        const emptyInputs = Array.from(document.querySelectorAll('.mark-input')).filter(input => !input.value);
-        if (emptyInputs.length > 0) {
-          emptyInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-          emptyInputs[0].focus();
-          shakeInput(emptyInputs[0]);
-        }
-        showToast('Please fill in all fields', 3000, 'error');
-      } else if (result.error === 'negative') {
-        showToast('Marks cannot be negative', 3000, 'error');
-      } else if (result.error === 'exceeds') {
-        showToast(`Marks for ${result.subject} cannot exceed ${result.max}`, 3000, 'error');
-      } else if (result.error === 'no_credits') {
-        showToast('No credits to calculate!', 3000, 'error');
+    try {
+      const subjects = this.getSubjects();
+      if (!subjects || subjects.length === 0) {
+        showToast('No subjects available for calculation', 3000, 'error');
+        return;
       }
-      return;
-    }
+      
+      const marks = appState.get().marks;
+      if (!marks || Object.keys(marks).length === 0) {
+        showToast('Please enter marks for at least one subject', 3000, 'error');
+        return;
+      }
+      
+      const result = calculator.calculateSGPA(subjects, marks);
 
-    this.renderResult(result.sgpa);
+      if (result.error) {
+        if (result.error === 'incomplete') {
+          const emptyInputs = Array.from(document.querySelectorAll('.mark-input')).filter(input => !input.value);
+          if (emptyInputs.length > 0) {
+            emptyInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            emptyInputs[0].focus();
+            shakeInput(emptyInputs[0]);
+          }
+          showToast('Please fill in all fields', 3000, 'error');
+        } else if (result.error === 'negative') {
+          showToast('Marks cannot be negative', 3000, 'error');
+        } else if (result.error === 'exceeds') {
+          showToast(`Marks for ${result.subject} cannot exceed ${result.max}`, 3000, 'error');
+        } else if (result.error === 'no_credits') {
+          showToast('No credits to calculate!', 3000, 'error');
+        } else if (result.error === 'invalid_subjects' || result.error === 'invalid_marks') {
+          showToast('Invalid data for calculation', 3000, 'error');
+        }
+        return;
+      }
+
+      if (typeof result.sgpa !== 'number' || isNaN(result.sgpa)) {
+        showToast('Error calculating SGPA', 3000, 'error');
+        return;
+      }
+
+      this.renderResult(result.sgpa);
+    } catch (error) {
+      console.error('Error in calculateSGPA:', error);
+      showToast('An error occurred while calculating SGPA', 3000, 'error');
+    }
   }
 
   renderResult(sgpa) {
+    if (typeof sgpa !== 'number' || isNaN(sgpa)) {
+      console.error('Invalid SGPA value:', sgpa);
+      showToast('Error: Invalid SGPA result', 3000, 'error');
+      return;
+    }
+    
     router.push(STEPS.RESULT, { sgpa });
     updateProgress(STEPS.RESULT);
 
@@ -262,82 +324,141 @@ class GradeCalcApp {
   }
 
   solveForTarget() {
-    const targetEl = document.getElementById('target-sgpa');
-    const targetValue = targetEl.value;
-
-    if (!targetValue || isNaN(parseFloat(targetValue))) {
-      showToast('Please enter a target SGPA', 3000, 'error');
-      return;
-    }
-
-    const target = parseFloat(targetValue);
-    if (target < 0 || target > 10) {
-      showToast('SGPA must be between 0 and 10', 3000, 'error');
-      return;
-    }
-
-    const subjects = this.getSubjects();
-    const result = calculator.solveForTarget(subjects, appState.get().marks, target);
-
-    if (result.error) {
-      if (result.error === 'all_filled') {
-        showToast('All fields are already filled');
-      } else if (result.error === 'impossible') {
-        showToast(`Impossible! Max possible SGPA is ${result.maxPossible.toFixed(2)}`);
+    try {
+      const targetEl = document.getElementById('target-sgpa');
+      if (!targetEl) {
+        console.error('Target SGPA input element not found');
+        showToast('Error: Input element not found', 3000, 'error');
+        return;
       }
-      return;
-    }
+      
+      const targetValue = targetEl.value;
 
-    result.marks.forEach(({ code, marks }) => {
-      appState.updateMark(code, marks);
-      const input = document.getElementById(`input-${code}`);
-      if (input) {
-        input.value = marks;
+      if (!targetValue || targetValue.trim() === '' || isNaN(parseFloat(targetValue))) {
+        showToast('Please enter a valid target SGPA', 3000, 'error');
+        return;
+      }
+
+      const target = parseFloat(targetValue);
+      if (target < 0 || target > 10) {
+        showToast('SGPA must be between 0 and 10', 3000, 'error');
+        return;
+      }
+
+      const subjects = this.getSubjects();
+      if (!subjects || subjects.length === 0) {
+        showToast('No subjects available', 3000, 'error');
+        return;
+      }
+      
+      const result = calculator.solveForTarget(subjects, appState.get().marks, target);
+
+      if (result.error) {
+        if (result.error === 'all_filled') {
+          showToast('All fields are already filled');
+        } else if (result.error === 'impossible') {
+          showToast(`Impossible! Max possible SGPA is ${result.maxPossible?.toFixed(2) || 'N/A'}`);
+        }
+        return;
+      }
+
+      if (!result.marks || !Array.isArray(result.marks)) {
+        console.error('Invalid result from solveForTarget:', result);
+        showToast('Error calculating marks', 3000, 'error');
+        return;
+      }
+
+      result.marks.forEach(({ code, marks }) => {
+        if (!code) return;
+        
+        appState.updateMark(code, marks);
+        const input = document.getElementById(`input-${code}`);
+        if (input) {
+          input.value = marks;
+          input.classList.remove('empty-field');
+          const parentRow = input.closest('.item-row');
+          if (parentRow) {
+            parentRow.style.opacity = '1';
+            const itemLabel = parentRow.querySelector('.item-label');
+            if (itemLabel) {
+              const asterisk = itemLabel.querySelector('span:last-child');
+              if (asterisk) asterisk.remove();
+            }
+          }
+        }
+      });
+
+      this.save();
+      showToast('Marks predicted and filled!', 3000, 'success');
+    } catch (error) {
+      console.error('Error in solveForTarget:', error);
+      showToast('An error occurred while predicting marks', 3000, 'error');
+    }
+  }
+
+  fillRandomMarks() {
+    try {
+      const inputs = document.querySelectorAll('.mark-input');
+      if (inputs.length === 0) {
+        showToast('No input fields found', 3000, 'error');
+        return;
+      }
+      
+      inputs.forEach(input => {
+        const max = parseFloat(input.dataset.max);
+        if (isNaN(max) || max <= 0) return;
+        
+        const min = Math.floor(max * 0.4);
+        const randomVal = Math.floor(Math.random() * (max - min + 1)) + min;
+        const code = input.dataset.code;
+        
+        if (!code) return;
+        
+        input.value = randomVal;
+        appState.updateMark(code, randomVal);
         input.classList.remove('empty-field');
         const parentRow = input.closest('.item-row');
         if (parentRow) {
           parentRow.style.opacity = '1';
-          const asterisk = parentRow.querySelector('.item-label span');
-          if (asterisk) asterisk.remove();
+          const itemLabel = parentRow.querySelector('.item-label');
+          if (itemLabel) {
+            const asterisk = itemLabel.querySelector('span:last-child');
+            if (asterisk) asterisk.remove();
+          }
         }
-      }
-    });
-
-    this.save();
-    showToast('Marks predicted and filled!', 3000, 'success');
-  }
-
-  fillRandomMarks() {
-    const inputs = document.querySelectorAll('.mark-input');
-    inputs.forEach(input => {
-      const max = parseFloat(input.dataset.max);
-      const min = Math.floor(max * 0.4);
-      const randomVal = Math.floor(Math.random() * (max - min + 1)) + min;
-      input.value = randomVal;
-      appState.updateMark(input.dataset.code, randomVal);
-      input.classList.remove('empty-field');
-      const parentRow = input.closest('.item-row');
-      if (parentRow) {
-        parentRow.style.opacity = '1';
-        const asterisk = parentRow.querySelector('.item-label span');
-        if (asterisk) asterisk.remove();
-      }
-    });
-    this.save();
-    showToast('Random marks filled!', 2000, 'success');
+      });
+      this.save();
+      showToast('Random marks filled!', 2000, 'success');
+    } catch (error) {
+      console.error('Error in fillRandomMarks:', error);
+      showToast('Error filling random marks', 3000, 'error');
+    }
   }
 
   resetAllMarks() {
-    const inputs = document.querySelectorAll('.mark-input');
-    inputs.forEach(input => {
-      input.value = '';
-      appState.updateMark(input.dataset.code, '');
-      input.classList.add('empty-field');
-      const parentRow = input.closest('.item-row');
-      if (parentRow) parentRow.style.opacity = '0.7';
-    });
-    this.save();
-    showToast('All marks cleared!', 2000, 'normal');
+    try {
+      const inputs = document.querySelectorAll('.mark-input');
+      if (inputs.length === 0) {
+        showToast('No input fields found', 3000, 'error');
+        return;
+      }
+      
+      inputs.forEach(input => {
+        const code = input.dataset.code;
+        if (!code) return;
+        
+        input.value = '';
+        appState.updateMark(code, '');
+        input.classList.add('empty-field');
+        const parentRow = input.closest('.item-row');
+        if (parentRow) parentRow.style.opacity = '0.7';
+      });
+      this.save();
+      showToast('All marks cleared!', 2000, 'normal');
+    } catch (error) {
+      console.error('Error in resetAllMarks:', error);
+      showToast('Error clearing marks', 3000, 'error');
+    }
   }
 
   goToBranch() {

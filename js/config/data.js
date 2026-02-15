@@ -12,9 +12,9 @@ const DATA = {
         { code: 'SEC-143', name: 'Engg. Graphics & Design with UI/UX', short: 'EG & UI/UX', credits: 3 }
       ],
       electives: {
-        Computing: [
-          { code: 'ITH-111', name: 'Basics of Computing (Python)', short: 'Python', credits: 3 },
-          { code: 'ITH-112', name: 'Basics of Computing Lab', short: 'Python Lab', credits: 1 }
+        Python: [
+          { code: 'ITH-111', name: 'Basics of Computing using Python', short: 'Python', credits: 3 },
+          { code: 'ITH-112', name: 'Basics of Computing using Python Lab', short: 'Python Lab', credits: 1 }
         ],
         Biology: [
           { code: 'SHM-111', name: 'Biology for Engineers', short: 'Bio', credits: 3 },
@@ -25,8 +25,8 @@ const DATA = {
     },
     2: {
       common: [
-        { code: 'CMP-100', name: 'Fund. of Programming (C)', short: 'FOP', credits: 3 },
-        { code: 'CMP-101', name: 'Fund. of Programming Lab', short: 'FOP Lab', credits: 1 },
+        { code: 'CMP-100', name: 'Fund. of Programming using C', short: 'FOP', credits: 3 },
+        { code: 'CMP-101', name: 'Fund. of Programming using C Lab', short: 'FOP Lab', credits: 1 },
         { code: 'SHM-134', name: 'Applied Mathematics - I', short: 'Math-I', credits: 3 },
         { code: 'AEC-151', name: 'Creative Thinking & Innovation', short: 'CTI', credits: 2 },
         { code: 'AEC-152', name: 'Creative Thinking & Innovation Lab', short: 'CTI Lab', credits: 1 },
@@ -95,8 +95,8 @@ const DATA = {
   COMP: {
     1: {
       common: [
-        { code: 'CMP-100', name: 'Fund. of Programming (C)', short: 'FOP', credits: 3 },
-        { code: 'CMP-101', name: 'Fund. of Programming Lab', short: 'FOP Lab', credits: 1 },
+        { code: 'CMP-100', name: 'Fund. of Programming using C', short: 'FOP', credits: 3 },
+        { code: 'CMP-101', name: 'Fund. of Programming using C Lab', short: 'FOP Lab', credits: 1 },
         { code: 'SHM-131', name: 'Engineering Mathematics-I', short: 'Math-I', credits: 3 },
         { code: 'AEC-151', name: 'Creative Thinking & Innovation', short: 'CTI', credits: 2 },
         { code: 'AEC-152', name: 'Creative Thinking & Innovation Lab', short: 'CTI Lab', credits: 1 },
@@ -118,8 +118,8 @@ const DATA = {
     },
     2: {
       common: [
-        { code: 'ITH-100', name: 'Fund. of Computing (Python)', short: 'Python', credits: 3 },
-        { code: 'ITH-101', name: 'Fund. of Computing Lab', short: 'Python Lab', credits: 1 },
+        { code: 'ITH-100', name: 'Fund. of Computing using Python', short: 'Python', credits: 3 },
+        { code: 'ITH-101', name: 'Fund. of Computing using Python Lab', short: 'Python Lab', credits: 1 },
         { code: 'SHM-132', name: 'Applied Physics', short: 'Physics', credits: 2 },
         { code: 'SHM-133', name: 'Applied Physics Lab', short: 'Phy Lab', credits: 1 },
         { code: 'AEC-153', name: 'Comm. & Technical Writing', short: 'CTW', credits: 3 },
@@ -176,9 +176,9 @@ const DATA = {
         { code: 'SEC-144', name: 'Electronics & Mechanical Workshop', short: 'Workshop', credits: 3 }
       ],
       electives: {
-        Computing: [
-          { code: 'ITH-111', name: 'Basics of Computing (Python)', short: 'Python', credits: 3 },
-          { code: 'ITH-112', name: 'Basics of Computing Lab', short: 'Python Lab', credits: 1 }
+        Python: [
+          { code: 'ITH-111', name: 'Basics of Computing using Python', short: 'Python', credits: 3 },
+          { code: 'ITH-112', name: 'Basics of Computing using Python Lab', short: 'Python Lab', credits: 1 }
         ],
         Chemistry: [
           { code: 'SHM-113', name: 'Engineering Chemistry', short: 'Chem', credits: 3 },
@@ -191,8 +191,8 @@ const DATA = {
   IT: {
     1: {
       common: [
-        { code: 'CMP-100', name: 'Fund. of Programming (C)', short: 'FOP', credits: 3 },
-        { code: 'CMP-101', name: 'Fund. of Programming Lab', short: 'FOP Lab', credits: 1 },
+        { code: 'CMP-100', name: 'Fund. of Programming using C', short: 'FOP', credits: 3 },
+        { code: 'CMP-101', name: 'Fund. of Programming using C Lab', short: 'FOP Lab', credits: 1 },
         { code: 'SHM-131', name: 'Engineering Mathematics-I', short: 'Math-I', credits: 3 },
         { code: 'AEC-151', name: 'Creative Thinking & Innovation', short: 'CTI', credits: 2 },
         { code: 'AEC-152', name: 'Creative Thinking & Innovation Lab', short: 'CTI Lab', credits: 1 },
@@ -214,8 +214,8 @@ const DATA = {
     },
     2: {
       common: [
-        { code: 'ITH-100', name: 'Fund. of Computing (Python)', short: 'Python', credits: 3 },
-        { code: 'ITH-101', name: 'Fund. of Computing Lab', short: 'Python Lab', credits: 1 },
+        { code: 'ITH-100', name: 'Fund. of Computing using Python', short: 'Python', credits: 3 },
+        { code: 'ITH-101', name: 'Fund. of Computing using Python Lab', short: 'Python Lab', credits: 1 },
         { code: 'SHM-132', name: 'Applied Physics', short: 'Physics', credits: 2 },
         { code: 'SHM-133', name: 'Applied Physics Lab', short: 'Phy Lab', credits: 1 },
         { code: 'AEC-153', name: 'Comm. & Technical Writing', short: 'CTW', credits: 3 },
@@ -270,9 +270,9 @@ const DATA = {
         { code: 'SEC-143', name: 'Engg. Graphics & Design UI/UX', short: 'EG & UI/UX', credits: 3 }
       ],
       electives: {
-        Computing: [
-          { code: 'ITH-111', name: 'Basics of Computing (Python)', short: 'Python', credits: 3 },
-          { code: 'ITH-112', name: 'Basics of Computing Lab', short: 'Python Lab', credits: 1 }
+        Python: [
+          { code: 'ITH-111', name: 'Basics of Computing using Python', short: 'Python', credits: 3 },
+          { code: 'ITH-112', name: 'Basics of Computing using Python Lab', short: 'Python Lab', credits: 1 }
         ],
         Chemistry: [
           { code: 'SHM-113', name: 'Engineering Chemistry', short: 'Chem', credits: 3 },
@@ -318,9 +318,9 @@ const DATA = {
         { code: 'SEC-141', name: 'Civil & Mechanical Workshop', short: 'Workshop', credits: 3 }
       ],
       electives: {
-        Computing: [
-          { code: 'ITH-111', name: 'Basics of Computing (Python)', short: 'Python', credits: 3 },
-          { code: 'ITH-112', name: 'Basics of Computing Lab', short: 'Python Lab', credits: 1 }
+        Python: [
+          { code: 'ITH-111', name: 'Basics of Computing using Python', short: 'Python', credits: 3 },
+          { code: 'ITH-112', name: 'Basics of Computing using Python Lab', short: 'Python Lab', credits: 1 }
         ],
         Chemistry: [
           { code: 'SHM-113', name: 'Engineering Chemistry', short: 'Chem', credits: 3 },
@@ -366,9 +366,9 @@ const DATA = {
         { code: 'SEC-142', name: 'Engg. Drawing & Modelling', short: 'EDM', credits: 3 }
       ],
       electives: {
-        Computing: [
-          { code: 'ITH-111', name: 'Basics of Computing (Python)', short: 'Python', credits: 3 },
-          { code: 'ITH-112', name: 'Basics of Computing Lab', short: 'Python Lab', credits: 1 }
+        Python: [
+          { code: 'ITH-111', name: 'Basics of Computing using Python', short: 'Python', credits: 3 },
+          { code: 'ITH-112', name: 'Basics of Computing using Python Lab', short: 'Python Lab', credits: 1 }
         ],
         Chemistry: [
           { code: 'SHM-113', name: 'Engineering Chemistry', short: 'Chem', credits: 3 },

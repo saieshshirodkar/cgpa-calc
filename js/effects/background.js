@@ -1,12 +1,15 @@
 const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
 
 let width, height;
 let dots = [];
 const spacing = 30;
 let mouse = { x: -1000, y: -1000 };
+let ctx = null;
+let animationId = null;
 
 function initCanvas() {
+  if (!canvas || !ctx) return;
+  
   width = window.innerWidth;
   height = window.innerHeight;
   canvas.width = width;
@@ -26,6 +29,8 @@ function initCanvas() {
 }
 
 function animate() {
+  if (!ctx || !canvas) return;
+  
   ctx.clearRect(0, 0, width, height);
 
   dots.forEach(dot => {
@@ -50,10 +55,26 @@ function animate() {
     ctx.fill();
   });
 
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
 }
 
 export function initBackground() {
+  if (!canvas) {
+    console.warn('Canvas element #bg-canvas not found, background animation disabled');
+    return;
+  }
+  
+  try {
+    ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.warn('Could not get 2D context for canvas');
+      return;
+    }
+  } catch (e) {
+    console.error('Error initializing canvas context:', e);
+    return;
+  }
+  
   window.addEventListener('resize', initCanvas);
   window.addEventListener('mousemove', (e) => {
     mouse.x = e.clientX;
@@ -62,4 +83,11 @@ export function initBackground() {
 
   initCanvas();
   animate();
+}
+
+export function destroyBackground() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
 }

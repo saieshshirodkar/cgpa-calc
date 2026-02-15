@@ -1,6 +1,16 @@
 import { showToast } from '../../utils/helpers.js';
 
 export function renderMarksInput(container, subjects, marks, onMarkUpdate, onCalculate, onBack, onRandomFill, onReset) {
+  if (!container) {
+    console.error('Container element is required for renderMarksInput');
+    return;
+  }
+  
+  if (!Array.isArray(subjects)) {
+    console.error('Subjects must be an array');
+    return;
+  }
+  
   let html = `
     <div class="step" id="marks-step">
       <p class="instruction" style="display: flex; justify-content: space-between; align-items: center;">
@@ -26,9 +36,13 @@ export function renderMarksInput(container, subjects, marks, onMarkUpdate, onCal
   `;
 
   subjects.forEach((sub) => {
-    const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
-
-    if (sub.credits === 0 || maxMarks === 0) return;
+    if (!sub || typeof sub !== 'object') return;
+    
+    const credits = parseFloat(sub.credits);
+    if (isNaN(credits) || credits <= 0) return;
+    
+    const maxMarks = sub.max !== undefined ? parseFloat(sub.max) : (credits * 25);
+    if (isNaN(maxMarks) || maxMarks <= 0) return;
 
     const val = marks[sub.code] !== undefined ? marks[sub.code] : '';
     const isEmpty = val === '';

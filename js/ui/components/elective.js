@@ -1,6 +1,11 @@
 import { showToast } from '../../utils/helpers.js';
 
 export function renderTrackSelection(container, semData, onSelect, onBack) {
+  if (!container || !semData || !semData.electives) {
+    console.error('Invalid parameters for renderTrackSelection');
+    return;
+  }
+  
   const tracks = Object.keys(semData.electives);
   
   let html = `
@@ -28,6 +33,11 @@ export function renderTrackSelection(container, semData, onSelect, onBack) {
 }
 
 export function renderSlotSelection(container, semData, selections, onUpdate, onConfirm, onBack) {
+  if (!container || !semData || !semData.electives) {
+    console.error('Invalid parameters for renderSlotSelection');
+    return;
+  }
+  
   const slots = Object.keys(semData.electives);
   
   let html = `

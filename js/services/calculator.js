@@ -22,31 +22,48 @@ class GradeCalculator {
   }
 
   calculateSGPA(subjects, marks) {
+    if (!Array.isArray(subjects)) {
+      return { error: 'invalid_subjects' };
+    }
+    
+    if (!marks || typeof marks !== 'object') {
+      return { error: 'invalid_marks' };
+    }
+
     let totalPoints = 0;
     let totalCredits = 0;
 
     for (const sub of subjects) {
-      if (sub.credits === 0) continue;
+      if (!sub || typeof sub !== 'object') continue;
+      
+      const credits = parseFloat(sub.credits);
+      if (isNaN(credits) || credits <= 0) continue;
 
       const mark = marks[sub.code];
       if (mark === undefined || mark === '' || isNaN(mark)) {
         return { error: 'incomplete', subject: sub.code };
       }
 
-      const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
+      const numericMark = parseFloat(mark);
+      const maxMarks = sub.max !== undefined ? parseFloat(sub.max) : (credits * 25);
       
-      if (mark < 0) {
+      if (isNaN(maxMarks) || maxMarks <= 0) {
+        console.warn(`Invalid maxMarks for subject ${sub.code}:`, sub.max);
+        continue;
+      }
+      
+      if (numericMark < 0) {
         return { error: 'negative', subject: sub.code };
       }
       
-      if (mark > maxMarks) {
+      if (numericMark > maxMarks) {
         return { error: 'exceeds', subject: sub.code, max: maxMarks };
       }
 
-      const percentage = (mark / maxMarks) * 100;
+      const percentage = (numericMark / maxMarks) * 100;
       const gradePoint = this.getGradePoint(percentage);
-      totalPoints += gradePoint * sub.credits;
-      totalCredits += sub.credits;
+      totalPoints += gradePoint * credits;
+      totalCredits += credits;
     }
 
     if (totalCredits === 0) {
@@ -57,26 +74,41 @@ class GradeCalculator {
   }
 
   hasPassed(sgpa) {
+    if (typeof sgpa !== 'number' || isNaN(sgpa)) {
+      return false;
+    }
     return sgpa >= CONSTANTS.MIN_PASS_SGPA;
   }
 
   solveForTarget(subjects, marks, targetSGPA) {
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+      return { error: 'invalid_subjects' };
+    }
+    
+    if (typeof targetSGPA !== 'number' || isNaN(targetSGPA) || targetSGPA < 0 || targetSGPA > 10) {
+      return { error: 'invalid_target' };
+    }
+
     let totalCredits = 0;
     let currentPoints = 0;
     const unfilled = [];
 
     subjects.forEach(sub => {
-      if (sub.credits === 0) return;
-      const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
-      if (maxMarks === 0) return;
+      if (!sub || typeof sub !== 'object') return;
+      
+      const credits = parseFloat(sub.credits);
+      if (isNaN(credits) || credits <= 0) return;
+      
+      const maxMarks = sub.max !== undefined ? parseFloat(sub.max) : (credits * 25);
+      if (isNaN(maxMarks) || maxMarks <= 0) return;
 
-      totalCredits += sub.credits;
-      const val = marks[sub.code];
+      totalCredits += credits;
+      const val = marks?.[sub.code];
       if (val !== undefined && val !== '' && !isNaN(parseFloat(val))) {
         const percentage = (parseFloat(val) / maxMarks) * 100;
-        currentPoints += this.getGradePoint(percentage) * sub.credits;
+        currentPoints += this.getGradePoint(percentage) * credits;
       } else {
-        unfilled.push(sub);
+        unfilled.push({ ...sub, credits, maxMarks });
       }
     });
 
@@ -89,7 +121,7 @@ class GradeCalculator {
     const neededFromRemaining = targetPoints - currentPoints;
 
     if (neededFromRemaining > (remainingCredits * 10)) {
-      const maxPossible = (currentPoints + (remainingCredits * 10)) / totalCredits;
+      const maxPossible = totalCredits > 0 ? (currentPoints + (remainingCredits * 10)) / totalCredits : 0;
       return { error: 'impossible', maxPossible };
     }
 
@@ -102,12 +134,12 @@ class GradeCalculator {
     let tempRemainingCredits = remainingCredits;
 
     unfilled.forEach(sub => {
-      const avgGP = tempRemainingNeeded / tempRemainingCredits;
+      const avgGP = tempRemainingCredits > 0 ? tempRemainingNeeded / tempRemainingCredits : 0;
       let gp = Math.ceil(avgGP);
       if (gp > 0 && gp < 5) gp = 5;
       if (gp > 10) gp = 10;
 
-      const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
+      const maxMarks = sub.maxMarks;
       const thresholds = { 10: 90, 9: 80, 8: 70, 7: 60, 6: 50, 5: 40, 0: 0 };
       const percentage = thresholds[gp] || 0;
       const marks = Math.ceil((percentage / 100) * maxMarks);

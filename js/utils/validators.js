@@ -1,13 +1,26 @@
 import { showToast, shakeInput } from './helpers.js';
 
 export function validateMarkInput(code, maxMarksStr, marks) {
-  const val = marks[code];
+  if (!code || typeof code !== 'string') {
+    return { valid: false, error: 'invalid_code' };
+  }
+  
+  const val = marks?.[code];
   const maxMarks = parseFloat(maxMarksStr);
+  
+  if (isNaN(maxMarks) || maxMarks < 0) {
+    return { valid: false, error: 'invalid_max_marks' };
+  }
+  
   const el = document.getElementById(`input-${code}`);
 
-  if (val === undefined || isNaN(val)) return { valid: true };
+  if (val === undefined || val === '' || isNaN(parseFloat(val))) {
+    return { valid: true };
+  }
+  
+  const numericVal = parseFloat(val);
 
-  if (val < 0) {
+  if (numericVal < 0) {
     if (el) {
       shakeInput(el);
       el.value = '';
@@ -16,7 +29,7 @@ export function validateMarkInput(code, maxMarksStr, marks) {
     return { valid: false, error: 'negative' };
   }
 
-  if (val > maxMarks) {
+  if (numericVal > maxMarks) {
     if (el) {
       shakeInput(el);
       el.value = '';

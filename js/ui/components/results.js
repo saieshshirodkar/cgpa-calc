@@ -2,6 +2,16 @@ import { hasPassed, getGradeLetter, getGradePoint } from '../../utils/grades.js'
 import { formatNumber } from '../../utils/helpers.js';
 
 export function renderResults(container, sgpa, branch, sem, subjects, marks, onBack, onChangeBranch, onRestart) {
+  if (!container) {
+    console.error('Container element is required for renderResults');
+    return;
+  }
+  
+  if (typeof sgpa !== 'number' || isNaN(sgpa)) {
+    console.error('Invalid SGPA value:', sgpa);
+    sgpa = 0;
+  }
+  
   const passed = hasPassed(sgpa);
 
   let breakdownHtml = `
@@ -15,11 +25,22 @@ export function renderResults(container, sgpa, branch, sem, subjects, marks, onB
   `;
 
   subjects.forEach(sub => {
-    if (sub.credits === 0) return;
+    if (!sub || typeof sub !== 'object') return;
+    
+    const credits = parseFloat(sub.credits);
+    if (isNaN(credits) || credits <= 0) return;
 
-    const mark = marks[sub.code];
-    const maxMarks = sub.max !== undefined ? sub.max : (sub.credits * 25);
-    const percentage = (mark / maxMarks) * 100;
+    const mark = marks?.[sub.code];
+    if (mark === undefined || mark === null || isNaN(parseFloat(mark))) {
+      return; // Skip subjects without valid marks
+    }
+    
+    const numericMark = parseFloat(mark);
+    const maxMarks = sub.max !== undefined ? parseFloat(sub.max) : (credits * 25);
+    
+    if (isNaN(maxMarks) || maxMarks <= 0) return;
+    
+    const percentage = (numericMark / maxMarks) * 100;
     const letter = getGradeLetter(percentage);
     const gradePoint = getGradePoint(percentage);
 

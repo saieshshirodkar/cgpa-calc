@@ -6,6 +6,11 @@ export function showToast(msg, duration = 2000, type = 'normal') {
   clearTimeout(toastTimeout);
   
   const toastBox = document.getElementById('toast-box');
+  if (!toastBox) {
+    console.warn('Toast container not found, message:', msg);
+    return;
+  }
+  
   const existingToasts = toastBox.querySelectorAll('.toast');
   existingToasts.forEach(t => t.remove());
   
@@ -27,11 +32,20 @@ export function showToast(msg, duration = 2000, type = 'normal') {
 }
 
 export function shakeInput(el) {
+  if (!el || !(el instanceof HTMLElement)) {
+    console.warn('Invalid element provided to shakeInput');
+    return;
+  }
+  
   el.style.borderColor = '#ff4444';
   el.classList.add('shake');
   setTimeout(() => {
-    el.style.borderColor = '';
-    el.classList.remove('shake');
+    if (el && el.style) {
+      el.style.borderColor = '';
+    }
+    if (el && el.classList) {
+      el.classList.remove('shake');
+    }
   }, 500);
 }
 
@@ -44,10 +58,23 @@ export function getGradeLetter(percentage) {
 }
 
 export function formatNumber(num, decimals = 2) {
+  if (num === null || num === undefined || isNaN(num) || !isFinite(num)) {
+    return '0.00';
+  }
   return num.toFixed(decimals);
 }
 
 export function createToastContainer() {
+  const existingToastBox = document.getElementById('toast-box');
+  if (existingToastBox) {
+    return existingToastBox;
+  }
+  
+  if (!document.body) {
+    console.error('Document body not available for toast container');
+    return null;
+  }
+  
   const toastBox = document.createElement('div');
   toastBox.id = 'toast-box';
   document.body.appendChild(toastBox);

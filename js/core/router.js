@@ -1,4 +1,4 @@
-import { STEPS } from '../config/constants.js';
+import { STEPS } from '../config/constants.js'; 
 
 class Router {
   constructor() {
@@ -13,13 +13,25 @@ class Router {
 
   push(view, data = {}) {
     if (this.isNavigating) return;
+    if (!view || typeof view !== 'string') {
+      console.error('Invalid view provided to router.push:', view);
+      return;
+    }
     const state = { view, ...data, timestamp: Date.now() };
     this.navigationStack.push(state);
-    history.pushState(state, '', '');
+    try {
+      history.pushState(state, '', '');
+    } catch (e) {
+      console.error('Failed to push state:', e);
+    }
   }
 
   back() {
-    history.back();
+    try {
+      history.back();
+    } catch (e) {
+      console.error('Failed to go back:', e);
+    }
   }
 
   handlePopState(event) {
@@ -34,7 +46,11 @@ class Router {
 
   clear() {
     this.navigationStack = [];
-    history.pushState(null, '', window.location.pathname);
+    try {
+      history.pushState(null, '', window.location.pathname);
+    } catch (e) {
+      console.error('Failed to clear history state:', e);
+    }
   }
 
   init() {

@@ -3,7 +3,16 @@ import { BRANCHES } from '../../config/constants.js';
 import { showToast } from '../../utils/helpers.js';
 
 export function renderBranchSelection(container, onSelect) {
-  console.log('renderBranchSelection component called', { BRANCHES, DATA });
+  if (!container) {
+    console.error('Container element is required for renderBranchSelection');
+    return;
+  }
+  
+  if (typeof onSelect !== 'function') {
+    console.error('onSelect callback is required for renderBranchSelection');
+    return;
+  }
+  
   let html = `
     <div class="step">
       <p class="instruction">Select Branch</p>
