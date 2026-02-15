@@ -1,0 +1,125 @@
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 20px 16px;
+  }
+
+  .container {
+    gap: 1.5rem;
+    max-width: 100%;
+  }
+
+  .app-header h1 {
+    font-size: 1.25rem;
+  }
+
+  button {
+    padding: 1.25rem 1rem;
+    margin-bottom: 0.85rem;
+    min-height: 60px;
+    font-size: 1rem;
+  }
+
+  button span {
+    overflow: visible;
+    white-space: normal;
+  }
+
+  input {
+    font-size: 16px;
+    padding: 1rem;
+    height: 50px;
+  }
+
+  select {
+    font-size: 16px;
+    height: 50px;
+    padding: 0.8rem 2.5rem 0.8rem 1rem;
+  }
+
+  .sem-grid {
+    gap: 0.75rem;
+  }
+
+  .sem-grid button {
+    padding: 1rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    min-height: 80px;
+  }
+
+  .sem-grid button span {
+    white-space: normal;
+  }
+
+  .sem-grid button span:last-child {
+    font-size: 1.2rem;
+  }
+
+  .instruction {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .item-row {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .item-label {
+    font-size: 0.7rem;
+  }
+
+  .flex-row div {
+    position: relative;
+  }
+
+  .flex-row span[style*="absolute"] {
+    top: 15px !important;
+    right: 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+  }
+
+  h2 {
+    font-size: 3rem !important;
+  }
+
+  #score-card {
+    padding: 1.5rem !important;
+  }
+
+  #score-card [style*="font-size: 3rem"] {
+    font-size: 2.5rem !important;
+  }
+
+  #toast-box {
+    bottom: 100px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+
+  .toast {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .rainbow-text {
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,8 @@
+:root {
+  --bg-color: #000000;
+  --text-color: #ffffff;
+  --accent-color: #333333;
+  --border-color: #333333;
+  --highlight-color: #ffffff;
+  --font-stack: "Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+}
