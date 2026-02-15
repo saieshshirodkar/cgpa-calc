@@ -32,7 +32,7 @@ export function renderResults(container, sgpa, branch, sem, subjects, marks, onB
 
     const mark = marks?.[sub.code];
     if (mark === undefined || mark === null || isNaN(parseFloat(mark))) {
-      return; // Skip subjects without valid marks
+      return;
     }
     
     const numericMark = parseFloat(mark);
